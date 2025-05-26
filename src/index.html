@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Menú Restaurante</title>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+</head>
+<body>
+  <script>
+    // Clase personalizada de error
+    class ErrorMenu extends Error {
+      constructor(msg, origen = "") {
+        super(msg);
+        this.name = "ErrorMenu";
+        this.origen = origen;
+      }
+    }
+
+    const menus = {
+      desayuno: {
+        primerPlato: [
+          { nombre: "tostada jamon", precio: 3 },
+          { nombre: "Huevos revueltos", precio: 6 },
+          { nombre: "acai bowl", precio: 8 }
+        ],
+        segundoPlato: [
+          { nombre: "donut", precio: 1.5 },
+          { nombre: "napolitana", precio: 2.5 },
+          { nombre: "croissant", precio: 2 }
+        ],
+        postre: [
+          { nombre: "cafe con leche", precio: 1.5 },
+          { nombre: "kefir", precio: 2.5 },
+          { nombre: "zumo de Naranja", precio: 2 }
+        ]  
+      },
+      almuerzo: {
+        primerPlato: [
+          { nombre: "Ensalada Cesar", precio: 8 },
+          { nombre: "cocido montañes", precio: 15 },
+          { nombre: "Pasta carbonara", precio: 10 }
+        ],
+        segundoPlato: [
+          { nombre: "pollo con patatas", precio: 12 },
+          { nombre: "pescado del dia", precio: 14.5 },
+          { nombre: "Sopa del dia", precio: 9 }
+        ],
+        postre: [
+          { nombre: "Fruta Fresca", precio: 1.5 },
+          { nombre: "helado", precio: 2.5 },
+          { nombre: "flan", precio: 2 }
+        ]
+      },
+      cena: {
+        primerPlato: [
+          { nombre: "Filete de ternera", precio: 13 },
+          { nombre: "Salmon a la Parrilla", precio: 14 },
+          { nombre: "empanada pollo", precio: 12 }
+        ],
+        segundoPlato: [
+          { nombre: "Vegetales Asados", precio: 7.5 },
+          { nombre: "pure verduras", precio: 8 },
+          { nombre: "Ensalada Mixta", precio: 6 }
+        ],
+        postre: [
+          { nombre: "tarta", precio: 3.5 },
+          { nombre: "cuajada", precio: 2 },
+          { nombre: "brownie", precio: 2.5 }
+        ]
+      }
+    };
+
+    const comentarios = [
+      "¡Excelente elección!",
+      "¡On egin!",
+      "¡Eso suena delicioso!",
+      "¡Perfecto para la ocasión!",
+      "¡Una opción muy popular!",
+      "¡Disfrútalo!"
+    ];
+
+    function hacerComentario() {
+      return comentarios[_.random(0, comentarios.length - 1)];
+    }
+
+    function pedirPlato(platos, tipoPlato) {
+      let opciones = platos.map(p => `${p.nombre.toUpperCase()} (${p.precio}€)`).join(" - ");
+      let eleccion, platoElegido;
+
+      try {
+        do {
+          eleccion = prompt(`Ahora toca elegir ${tipoPlato.toUpperCase()}, díganos qué prefiere:\n${opciones}`);
+          if (!eleccion) {
+            alert("Debe elegir una opción válida.");
+            continue;
+          }
+          eleccion = eleccion.trim().toLowerCase();
+          platoElegido = platos.find(p => p.nombre.toLowerCase() === eleccion);
+
+          if (!platoElegido) {
+            alert("Opción no válida. Por favor, inténtelo de nuevo.");
+          }
+        } while (!platoElegido);
+
+        alert(hacerComentario());
+        return platoElegido;
+      } catch (err) {
+        throw new ErrorMenu("Error al seleccionar el plato", "pedirPlato");
+      }
+    }
+
+    function obtenerHoraUsuario() {
+      let obtenerHora;
+      do {
+        obtenerHora = prompt("¡Bienvenid@! Por favor, introduzca una hora en formato 24h (HH:MM)");
+        if (obtenerHora === null) {
+          throw new ErrorMenu("El usuario ha cancelado la introducción de la hora", "obtenerHoraUsuario");
+        }
+        if (!obtenerHora.match(/^\d{2}:\d{2}$/)) {
+          alert("Formato incorrecto. Por favor, introduzca la hora como HH:MM");
+        }
+      } while (!obtenerHora || !obtenerHora.match(/^\d{2}:\d{2}$/));
+
+      try {
+        const [horaStr, minStr] = obtenerHora.split(":");
+        return {
+          hora: parseInt(horaStr),
+          minutos: parseInt(minStr)
+        };
+      } catch {
+        throw new ErrorMenu("Formato de hora inválido", "obtenerHoraUsuario");
+      }
+    }
+
+    function seleccionarMenu(hora) {
+      if (hora >= 6 && hora < 12) return "desayuno";
+      if (hora >= 12 && hora < 17) return "almuerzo";
+      if (hora >= 19 && hora <= 23) return "cena";
+      throw new ErrorMenu("No hay menú disponible para esta hora", "seleccionarMenu");
+    }
+
+    try {
+      let menuSeleccionado, menu;
+
+      while (true) {
+        try {
+          const { hora, minutos } = obtenerHoraUsuario();
+          menuSeleccionado = seleccionarMenu(hora);
+          menu = menus[menuSeleccionado];
+          break; 
+        } catch (error) {
+          if (error instanceof ErrorMenu) {
+            alert(`Error: ${error.message}. Por favor, intente con otra hora.`);
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      let mensaje = `Bienvenid@, el menú que le corresponde es el MENÚ ${menuSeleccionado.toUpperCase()}.\n\n`;
+      mensaje += "PRIMER PLATO: " + menu.primerPlato.map(p => p.nombre.toUpperCase()).join(" - ") + "\n\n";
+      mensaje += "SEGUNDO PLATO: " + menu.segundoPlato.map(p => p.nombre.toUpperCase()).join(" - ") + "\n\n";
+      mensaje += "POSTRE: " + menu.postre.map(p => p.nombre.toUpperCase()).join(" - ") + "\n";
+      alert(mensaje);
+
+      const elegido1 = pedirPlato(menu.primerPlato, "plato principal");
+      const elegido2 = pedirPlato(menu.segundoPlato, "segundo plato");
+      const elegido3 = pedirPlato(menu.postre, "postre");
+
+      let resumen = `Estos son los platos del menú ${menuSeleccionado.toUpperCase()} seleccionados:\n\n`;
+      resumen += `${elegido1.nombre.toUpperCase()} (${elegido1.precio}€)\n`;
+      resumen += `${elegido2.nombre.toUpperCase()} (${elegido2.precio}€)\n`;
+      resumen += `${elegido3.nombre.toUpperCase()} (${elegido3.precio}€)\n\n`;
+
+      const total = elegido1.precio + elegido2.precio + elegido3.precio;
+      resumen += `TOTAL: ${total.toFixed(2)}€`;
+
+      alert(resumen);
+    } catch (error) {
+      if (error instanceof ErrorMenu) {
+        console.error(`Error personalizado (${error.origen}): ${error.message}`);
+        alert(`Ha ocurrido un error: ${error.message}`);
+      } else {
+        console.error("Error inesperado:", error);
+        alert("Se ha producido un error inesperado. Inténtelo más tarde.");
+      }
+    }
+  </script>
+</body>
+</html>
